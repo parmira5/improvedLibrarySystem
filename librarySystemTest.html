@@ -17,8 +17,6 @@
                 'callback': callback,
                 'dependencies': dependencies,
                 'cache': null,
-                //Adding a count property for the last test
-                'count' : 0
             };
         } else {
             //Just to make typing this less tedious
@@ -29,9 +27,8 @@
                 return libraryStorage[element].callback();
             });
 
-            //check to see if the library's cache value is null. If it is, set it equal to the return value of the library's callback, increment the library's count property, return cache. If cache value is not null, return cache.
+            //check to see if the library's cache value is null. If it is, set it equal to the return value of the library's callback, and then return cache. If cache value is not null, return cache.
             if (libraryStorage[libraryName].cache === null){
-                libraryStorage[libraryName].count++;
                 libraryStorage[libraryName].cache = libraryStorage[libraryName].callback(...dependenciesArray);
                 return libraryStorage[libraryName].cache;
             } else {
@@ -87,11 +84,16 @@
             eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
         },
         'It should only run the callback function for each library once.': function(){
+            var callbackCounter = 0;
+
             librarySystem('callbackCounter', [], function(){
-                return libraryStorage.callbackCounter.count;
+                callbackCounter++;
             });
 
-            eq(librarySystem('callbackCounter'), 1);
+            librarySystem('callbackCounter');
+            librarySystem('callbackCounter');
+
+            eq(callbackCounter, 1);
         }
 
     });
