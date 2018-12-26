@@ -1,0 +1,98 @@
+<script src= "tinytest/tinytest.js"></script>
+<script>
+
+    //It should create a library when when greater than one parameter is passed.
+    //It should return a library when only one parameter is passed.
+    //it should accept an array with dependencies.
+    //It should pass those dependencies to the libarary
+    //It should work with dependencies that are created after the dependent library.
+    //It should only run the callback function for each library only once.
+
+(function (){
+    var libraryStorage = {};
+
+	function librarySystem (libraryName, dependencies, callback) {
+        if (arguments.length > 1){
+            libraryStorage[libraryName] = {
+                'callback': callback,
+                'dependencies': dependencies,
+                'cache': null,
+                //Adding a count property for the last test
+                'count' : 0
+            };
+        } else {
+            //Just to make typing this less tedious
+            var storedDependencies = libraryStorage[libraryName].dependencies;
+
+            //store the values of the resolved dependencies in an array to be passed to the dependent library's callback
+            var dependenciesArray = storedDependencies.map(function(element){
+                return libraryStorage[element].callback();
+            });
+
+            //check to see if the library's cache value is null. If it is, set it equal to the return value of the library's callback, increment the library's count property, return cache. If cache value is not null, return cache.
+            if (libraryStorage[libraryName].cache === null){
+                libraryStorage[libraryName].count++;
+                libraryStorage[libraryName].cache = libraryStorage[libraryName].callback(...dependenciesArray);
+                return libraryStorage[libraryName].cache;
+            } else {
+                return libraryStorage[libraryName].cache;
+            }
+        }
+    }
+    window.librarySystem = librarySystem;
+    window.libraryStorage = libraryStorage;
+    }
+)();
+
+    tests({
+        'It should create a library when greater than one argument is passed': function(){
+            librarySystem('app', [], function() {
+                return 'this library says hi'
+            });
+
+            eq(librarySystem('app'), 'this library says hi');
+        },
+
+        'It should return a library when only one argument is passed.': function(){
+            eq(librarySystem('app'), 'this library says hi');
+        },
+        'it should accept an array with dependencies and pass those dependencies to the library\'s callback.': function (){
+            librarySystem('perrysName', [], function (){
+                return 'Perry';
+            });
+
+            librarySystem('perrysJob', [], function (){
+                return 'Power';
+            });
+
+            librarySystem('workBlurbTwo', ['perrysName', 'perrysJob'], function (perrysName, perrysJob) {
+                return perrysName + ' works at ' + perrysJob; 
+            });
+            
+            eq(librarySystem('workBlurbTwo'), 'Perry works at Power');
+        },
+        'It should work with dependencies that are created after the dependent library.': function(){
+            librarySystem('workBlurb', ['name', 'company'], function(name, company) {
+                return name + ' works at ' + company;
+            });
+
+            librarySystem('name', [], function() {
+                return 'Gordon';
+            });
+
+            librarySystem('company', [], function() {
+                return 'Watch and Code';
+            });
+
+            eq(librarySystem('workBlurb'), 'Gordon works at Watch and Code');
+        },
+        'It should only run the callback function for each library once.': function(){
+            librarySystem('callbackCounter', [], function(){
+                return libraryStorage.callbackCounter.count;
+            });
+
+            eq(librarySystem('callbackCounter'), 1);
+        }
+
+    });
+</script>
